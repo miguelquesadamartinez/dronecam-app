@@ -5,9 +5,6 @@ import { Alert, Button, ScrollView, StyleSheet, Text, TextInput, View } from 're
 const defaultStreamUrl = 'http://192.168.0.102:8888/drone/index.m3u8';
 const defaultApiUrl = 'http://192.168.0.102:8000';
 
-// Debe coincidir con DRONE_TOKEN en comando_server.py.
-const DRONE_TOKEN = 'cambia-este-token';
-
 export default function HomeScreen() {
   const [inputUrl, setInputUrl] = useState(defaultStreamUrl);
   const [streamUrl, setStreamUrl] = useState(defaultStreamUrl);
@@ -33,7 +30,7 @@ export default function HomeScreen() {
     try {
       const qs = new URLSearchParams(params).toString();
       const url = `${apiUrl}${path}${qs ? `?${qs}` : ''}`;
-      const res = await fetch(url, { method: 'POST', headers: { 'X-Drone-Token': DRONE_TOKEN } });
+      const res = await fetch(url, { method: 'POST' });
       const data = await res.json();
       setStatus(`${path} -> ${JSON.stringify(data)}`);
     } catch (err: any) {
