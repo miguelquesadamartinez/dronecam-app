@@ -12,6 +12,7 @@ export default function HomeScreen() {
 
   const [apiUrl, setApiUrl] = useState(defaultApiUrl);
   const [status, setStatus] = useState('Sin conectar al servidor de comandos');
+  const [motorTestRunning, setMotorTestRunning] = useState(false);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const player = useVideoPlayer(streamUrl, (player) => {
@@ -42,6 +43,18 @@ export default function HomeScreen() {
     Alert.alert('Confirmar despegue', '¿Despegar el dron ahora?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Despegar', onPress: () => enviarComando('/despegar', { altitud: '5' }) },
+    ]);
+  };
+
+  const toggleMotorTest = () => {
+    if (motorTestRunning) {
+      enviarComando('/motor_test/detener');
+      setMotorTestRunning(false);
+      return;
+    }
+    Alert.alert('Prueba de motores', 'Los motores van a girar de verdad, poco a poco. ¿Confirmas?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Probar', onPress: () => { enviarComando('/motor_test/iniciar'); setMotorTestRunning(true); } },
     ]);
   };
 
@@ -94,6 +107,9 @@ export default function HomeScreen() {
         </View>
         <View style={styles.spacer}>
           <Button title="RTL" onPress={() => enviarComando('/rtl')} />
+        </View>
+        <View style={styles.spacer}>
+          <Button title={motorTestRunning ? 'Parar motores' : 'Probar motores'} onPress={toggleMotorTest} />
         </View>
         <View style={styles.spacer}>
           <Button title="PARADA DE EMERGENCIA" color="#c0392b" onPress={() => enviarComando('/parada_emergencia')} />
