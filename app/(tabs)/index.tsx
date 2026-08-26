@@ -1,6 +1,6 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const defaultStreamUrl = 'http://192.168.0.102:8888/drone/index.m3u8';
 const defaultApiUrl = 'http://192.168.0.102:8000';
@@ -13,6 +13,7 @@ export default function HomeScreen() {
   const [apiUrl, setApiUrl] = useState(defaultApiUrl);
   const [status, setStatus] = useState('Sin conectar al servidor de comandos');
   const [motorTestRunning, setMotorTestRunning] = useState(false);
+  const [telemetria, setTelemetria] = useState<any>(null);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const player = useVideoPlayer(streamUrl, (player) => {
@@ -46,6 +47,19 @@ export default function HomeScreen() {
     ]);
   };
 
+  const fetchTelemetria = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/telemetria`);
+      setTelemetria(await res.json());
+    } catch {
+      // se reintenta en el siguiente ciclo
+    }
+  };
+
+  const moverInicio = (vx: number, yawRate: number) =>
+    enviarComando('/mover', { vx: String(vx), yaw_rate: String(yawRate) });
+  const moverFin = () => enviarComando('/parar_movimiento');
+
   const toggleMotorTest = () => {
     if (motorTestRunning) {
       enviarComando('/motor_test/detener');
@@ -60,7 +74,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (isConnected && apiUrl) {
-      pingRef.current = setInterval(() => enviarComando('/ping'), 2000);
+      pingRef.current = setInterval(() => {
+        enviarComando('/ping');
+        fetchTelemetria();
+      }, 2000);
     }
     return () => {
       if (pingRef.current) clearInterval(pingRef.current);
@@ -101,6 +118,35 @@ export default function HomeScreen() {
           keyboardType="url"
         />
 
+        {telemetria && (
+          <View style={styles.telemetryBox}>
+            <Text style={styles.telemetryText}>
+              Modo: {telemetria.modo} {telemetria.armado ? '(ARMADO)' : ''}
+            </Text>
+            <Text style={styles.telemetryText}>Altitud: {telemetria.altitud?.toFixed?.(1)} m</Text>
+            <Text style={styles.telemetryText}>Satélites: {telemetria.satelites ?? '-'}</Text>
+            <Text style={styles.telemetryText}>Batería: {telemetria.bateria_voltaje ?? '-'} V</Text>
+          </View>
+        )}
+
+        <Text style={styles.label}>Movimiento (mantén pulsado)</Text>
+        <View style={styles.dpad}>
+          <Pressable style={styles.dpadButton} onPressIn={() => moverInicio(2, 0)} onPressOut={moverFin}>
+            <Text style={styles.dpadButtonText}>▲ Adelante</Text>
+          </Pressable>
+          <View style={styles.row}>
+            <Pressable style={styles.dpadButton} onPressIn={() => moverInicio(0, -0.5)} onPressOut={moverFin}>
+              <Text style={styles.dpadButtonText}>◀ Girar izq.</Text>
+            </Pressable>
+            <Pressable style={styles.dpadButton} onPressIn={() => moverInicio(0, 0.5)} onPressOut={moverFin}>
+              <Text style={styles.dpadButtonText}>Girar der. ▶</Text>
+            </Pressable>
+          </View>
+          <Pressable style={styles.dpadButton} onPressIn={() => moverInicio(-2, 0)} onPressOut={moverFin}>
+            <Text style={styles.dpadButtonText}>▼ Atrás</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.row}>
           <View style={styles.half}><Button title="Despegar" onPress={despegar} /></View>
           <View style={styles.half}><Button title="Aterrizar" onPress={() => enviarComando('/aterrizar')} /></View>
@@ -138,4 +184,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   half: { flex: 1 },
   status: { color: '#aaa', marginTop: 12, fontSize: 12 },
+  telemetryBox: { backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, marginBottom: 12 },
+  telemetryText: { color: '#0f0', fontSize: 12, fontFamily: 'monospace' },
+  dpad: { alignItems: 'center', marginBottom: 12 },
+  dpadButton: { backgroundColor: '#333', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 8, margin: 4 },
+  dpadButtonText: { color: '#fff', textAlign: 'center' },
 });
