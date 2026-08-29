@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const [status, setStatus] = useState('Sin conectar al servidor de comandos');
   const [motorTestRunning, setMotorTestRunning] = useState(false);
   const [telemetria, setTelemetria] = useState<any>(null);
+  const [logs, setLogs] = useState<string[]>([]);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const player = useVideoPlayer(streamUrl, (player) => {
@@ -60,6 +61,19 @@ export default function HomeScreen() {
     enviarComando('/mover', { vx: String(vx), yaw_rate: String(yawRate) });
   const moverFin = () => enviarComando('/parar_movimiento');
 
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/logs`);
+      const data = await res.json();
+      setLogs(data.lineas ?? []);
+    } catch {
+      // se reintenta en el siguiente ciclo
+    }
+  };
+
+  const ejecutarScript = (nombre: string) => enviarComando('/ejecutar_script', { nombre });
+  const detenerScript = () => enviarComando('/detener_script');
+
   const toggleMotorTest = () => {
     if (motorTestRunning) {
       enviarComando('/motor_test/detener');
@@ -77,6 +91,7 @@ export default function HomeScreen() {
       pingRef.current = setInterval(() => {
         enviarComando('/ping');
         fetchTelemetria();
+        fetchLogs();
       }, 2000);
     }
     return () => {
@@ -105,6 +120,15 @@ export default function HomeScreen() {
       </View>
 
       <VideoView style={styles.video} player={player} allowsFullscreen contentFit="contain" />
+
+      <View style={styles.logBox}>
+        <Text style={styles.label}>Consola (últimas líneas)</Text>
+        {logs.length === 0 ? (
+          <Text style={styles.logLine}>—</Text>
+        ) : (
+          logs.map((linea, i) => <Text key={i} style={styles.logLine}>{linea}</Text>)
+        )}
+      </View>
 
       <View style={styles.controls}>
         <Text style={styles.label}>URL del servidor de comandos (RPi)</Text>
@@ -161,6 +185,19 @@ export default function HomeScreen() {
           <Button title="PARADA DE EMERGENCIA" color="#c0392b" onPress={() => enviarComando('/parada_emergencia')} />
         </View>
 
+        <View style={styles.separator} />
+        <Text style={styles.label}>Ejecutar scripts (drone-env)</Text>
+        <View style={styles.row}>
+          <View style={styles.half}><Button title="Movimiento" onPress={() => ejecutarScript('movimiento')} /></View>
+          <View style={styles.half}><Button title="Misión" onPress={() => ejecutarScript('mision')} /></View>
+        </View>
+        <View style={styles.spacer}>
+          <Button title="Detección personas" onPress={() => ejecutarScript('deteccion_personas')} />
+        </View>
+        <View style={styles.spacer}>
+          <Button title="Detener script" onPress={detenerScript} />
+        </View>
+
         <Text style={styles.status}>{status}</Text>
       </View>
     </ScrollView>
@@ -189,4 +226,7 @@ const styles = StyleSheet.create({
   dpad: { alignItems: 'center', marginBottom: 12 },
   dpadButton: { backgroundColor: '#333', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 8, margin: 4 },
   dpadButtonText: { color: '#fff', textAlign: 'center' },
+  logBox: { backgroundColor: '#111', padding: 12 },
+  logLine: { color: '#0f0', fontSize: 11, fontFamily: 'monospace' },
+  separator: { height: 1, backgroundColor: '#333', marginVertical: 16 },
 });
