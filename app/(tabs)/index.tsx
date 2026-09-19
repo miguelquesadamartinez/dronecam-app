@@ -1,9 +1,12 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { API_URL, STREAM_URL } from '@/constants/drone-config';
 
-const defaultStreamUrl = 'http://192.168.0.102:8888/drone/index.m3u8';
-const defaultApiUrl = 'http://192.168.0.102:8000';
+// La IP de la Raspberry Pi sale de constants/drone-config.ts (cambia sola
+// según ACTIVE_LOCATION) — no la escribas aquí a mano.
+const defaultStreamUrl = STREAM_URL;
+const defaultApiUrl = API_URL;
 
 export default function HomeScreen() {
   const [inputUrl, setInputUrl] = useState(defaultStreamUrl);
