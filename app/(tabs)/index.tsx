@@ -75,9 +75,14 @@ export default function HomeScreen() {
     }
   };
 
-  const moverInicio = (vx: number, yawRate: number) =>
-    enviarComando('/mover', { vx: String(vx), yaw_rate: String(yawRate) });
+  const moverInicio = (vx: number, yawRate: number, vz: number = 0) =>
+    enviarComando('/mover', { vx: String(vx), yaw_rate: String(yawRate), vz: String(vz) });
   const moverFin = () => enviarComando('/parar_movimiento');
+  // OJO con el signo de vz: el servidor lo manda en el frame NED (el eje Z
+  // apunta hacia abajo), así que vz negativo es subir y vz positivo es
+  // bajar — al revés de lo que parecería a primera vista.
+  const subirInicio = () => moverInicio(0, 0, -0.5);
+  const bajarInicio = () => moverInicio(0, 0, 0.5);
 
   const fetchLogs = async () => {
     try {
@@ -187,6 +192,14 @@ export default function HomeScreen() {
           <Pressable style={styles.dpadButton} onPressIn={() => moverInicio(-2, 0)} onPressOut={moverFin}>
             <Text style={styles.dpadButtonText}>▼ Atrás</Text>
           </Pressable>
+          <View style={styles.row}>
+            <Pressable style={styles.dpadButton} onPressIn={subirInicio} onPressOut={moverFin}>
+              <Text style={styles.dpadButtonText}>⬆ Subir</Text>
+            </Pressable>
+            <Pressable style={styles.dpadButton} onPressIn={bajarInicio} onPressOut={moverFin}>
+              <Text style={styles.dpadButtonText}>⬇ Bajar</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.row}>
