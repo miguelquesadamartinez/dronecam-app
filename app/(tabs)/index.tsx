@@ -1,5 +1,5 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { API_URL, STREAM_URL } from '@/constants/drone-config';
 
@@ -20,7 +20,22 @@ export default function HomeScreen() {
   const [logs, setLogs] = useState<string[]>([]);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const player = useVideoPlayer(streamUrl, (player) => {
+  const videoSource = useMemo(
+    () =>
+      streamUrl
+        ? {
+            uri: streamUrl,
+            bufferOptions: {
+              preferredForwardBufferDuration: 1,
+              minBufferForPlayback: 0.5,
+              waitsToMinimizeStalling: false,
+            },
+          }
+        : null,
+    [streamUrl]
+  );
+
+  const player = useVideoPlayer(videoSource, (player) => {
     player.loop = true;
     player.play();
   });
