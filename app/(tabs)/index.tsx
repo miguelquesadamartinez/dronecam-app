@@ -223,9 +223,6 @@ export default function HomeScreen() {
           <View style={styles.half}><Button title="Misión" onPress={() => ejecutarScript('mision')} /></View>
         </View>
         <View style={styles.spacer}>
-          <Button title="Detección personas" onPress={() => ejecutarScript('deteccion_personas')} />
-        </View>
-        <View style={styles.spacer}>
           <Button title="Detener script" onPress={detenerScript} />
         </View>
 
