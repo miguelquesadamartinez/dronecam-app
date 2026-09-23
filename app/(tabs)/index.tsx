@@ -149,7 +149,7 @@ export default function HomeScreen() {
         {logs.length === 0 ? (
           <Text style={styles.logLine}>—</Text>
         ) : (
-          [...logs].reverse().map((linea, i) => <Text key={i} style={styles.logLine}>{linea}</Text>)
+          logs.slice(-10).reverse().map((linea, i) => <Text key={i} style={styles.logLine}>{linea}</Text>)
         )}
       </View>
 
